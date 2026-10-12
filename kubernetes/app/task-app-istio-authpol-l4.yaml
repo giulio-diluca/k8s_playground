@@ -1,0 +1,17 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: task-app-istio-authpol-l4
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: task-app
+  action: ALLOW
+  rules:
+    - from:
+      - source:
+          principals: ["cluster.local/ns/istio-system/sa/task-app-gateway-istio"]
+      to:
+        - operation:
+            ports: ["8080"]

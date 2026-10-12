@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: task-app-elasticsearch
+spec:
+  serviceName: "task-app-elasticsearch"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-app-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: task-app-elasticsearch
+    spec:
+      securityContext:
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: docker-reg-secret
+      containers:
+        - name: task-app-elasticsearch
+          image: elasticsearch:7.17.10
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+          ports:
+            - containerPort: 9200
+              name: rest
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g" # JVM Heap limit
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: task-app-elasticsearch-pv-claim

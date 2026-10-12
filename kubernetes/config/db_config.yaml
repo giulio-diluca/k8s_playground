@@ -1,0 +1,10 @@
+database:
+  user: root
+  password: 12345
+  net: tcp
+  addr: task-app-sql-db:3306
+  dbname: task_app
+  max_open_conns: 25
+  max_idle_conns: 10
+  max_connect_retries: 10
+  retry_delay_seconds: 5

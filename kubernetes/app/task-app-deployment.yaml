@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: task-app
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-app
+  labels:
+    app: task-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: task-app
+  template:
+    metadata:
+      labels:
+        app: task-app
+    spec:
+      serviceAccountName: task-app
+      containers:
+        - name: task-app
+          image: ghcr.io/giulio-diluca/task-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: db-secret-volume
+              mountPath: /app/db_config.yaml
+              subPath: db_config.yaml
+              readOnly: true
+      imagePullSecrets:
+        - name: ghcr-reg-secret
+      volumes:
+        - name: db-secret-volume
+          secret:
+            secretName: task-app-secret
+            items:
+            - key: db_config.yaml
+              path: db_config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-app
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: task-app

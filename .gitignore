@@ -1,0 +1,4 @@
+# custom
+*.env
+!*.env.example
+**/credentials/values.yml

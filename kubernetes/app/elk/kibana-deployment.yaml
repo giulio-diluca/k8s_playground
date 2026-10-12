@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-app-kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-app-kibana
+  template:
+    metadata:
+      labels:
+        app: task-app-kibana
+    spec:
+      imagePullSecrets:
+        - name: docker-reg-secret
+      containers:
+        - name: task-app-kibana
+          image: kibana:7.17.10
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: "http://task-app-elasticsearch:9200"
+          ports:
+            - containerPort: 5601
+              name: http

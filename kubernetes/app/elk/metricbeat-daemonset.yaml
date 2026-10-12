@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: task-app-metricbeat
+spec:
+  selector:
+    matchLabels:
+      app: task-app-metricbeat
+  template:
+    metadata:
+      labels:
+        app: task-app-metricbeat
+    spec:
+      serviceAccountName: task-app-metricbeat
+      terminationGracePeriodSeconds: 30
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: docker-reg-secret
+      containers:
+        - name: task-app-metricbeat
+          image: elastic/metricbeat:7.17.0
+          imagePullPolicy: IfNotPresent
+          args: [
+            "-c", "/etc/metricbeat.yml",
+            "-e",
+            "-system.hostfs=/hostfs"
+          ]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            runAsUser: 0 # needed to read /proc from host
+          resources:
+            limits:
+              memory: 300Mi
+              cpu: 200m
+            requests:
+              memory: 100Mi
+              cpu: 100m
+          volumeMounts:
+            - name: config
+              mountPath: "/etc/metricbeat.yml"
+              readOnly: true
+              subPath: metricbeat.yml
+            - name: proc
+              mountPath: /hostfs/proc
+              readOnly: true
+            - name: sys
+              mountPath: /hostfs/sys
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            defaultMode: 0600
+            name: task-app-metricbeat-config
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
